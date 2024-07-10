@@ -5,7 +5,7 @@ CXXFLAGS = -std=c++2a -Weffc++ -Wshadow -Wall -Wextra -g3
 snake: main.o snake_game.o snake.o termfuncs.o
 	$(CXX) -o $@ $^
 
-%.o: %.cpp $(shell echo *.h)
+%.o: src/%.cpp $(shell echo src/*.h)
 	$(CXX) $(CXXFLAGS) -c $<
 
 clean:

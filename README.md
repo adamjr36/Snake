@@ -1,8 +1,9 @@
 # Snake
 
 ## Usage
-./snake [size | -h | --help]
-size: the size of the game board
+1. make
+2. ./snake [size | -h | --help]
+    size: the size of the game board
 
 ## Next
 1. Fix new fruit generation algorithm
