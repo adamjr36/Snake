@@ -1,5 +1,7 @@
 # Snake
 
+Command line simple snake.
+
 ## Usage
 1. make
 2. ./snake [size | -h | --help]
