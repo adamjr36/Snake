@@ -22,9 +22,14 @@ class SnakeGame {
         void draw();
         void move();
         void game_over();
+        void game_win();
         
         bool process_input();
         void new_fruit();
+
+        void empty_square(int x, int y);
+        void fill_square(int x, int y, char c);
+        void change_square(int x, int y, char c);
 
         SnakeGamepImpl* game;
 };

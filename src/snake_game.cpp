@@ -30,6 +30,7 @@ struct SnakeGamepImpl {
     Snake snake;
 
     int size;
+    short int empty_squares;
     char game_over;
 };
 ////
@@ -61,10 +62,12 @@ void SnakeGame::init_game(int size) {
         }
     }
 
+    game->empty_squares = size * size;
+
     // NEW SNAKE
     int snake_row = std::rand() % size;
     int snake_col = std::rand() % size;
-    game->grid[snake_row][snake_col] = HEAD;
+    fill_square(snake_row, snake_col, HEAD);
     game->snake = Snake(snake_row, snake_col);
 
     // NEW FRUIT
@@ -131,7 +134,7 @@ void SnakeGame::move() {
         return;
     }
     // Set old head to tail, then check if we ran into the tail
-    game->grid[old_head.first][old_head.second] = TAIL;
+    change_square(old_head.first, old_head.second, TAIL);
     char next_head = game->grid[row][col];
     if (next_head == TAIL) {
         game_over();
@@ -140,11 +143,13 @@ void SnakeGame::move() {
     // Move the snake on the board and remove the tail if we didn't eat fruit
     else if (next_head == ' ') {
         std::pair<int, int> tail = game->snake.remove_tail();
-        game->grid[tail.first][tail.second] = ' ';
+        empty_square(tail.first, tail.second);
+        fill_square(row, col, HEAD);
     } else {
         new_fruit();
+        change_square(row, col, HEAD);
     }
-    game->grid[row][col] = HEAD;
+    
 }
 
 void SnakeGame::game_over() {
@@ -152,10 +157,19 @@ void SnakeGame::game_over() {
     game->game_over = 1;
 }
 
+void SnakeGame::game_win() {
+    std::cout << "YOU WIN! :))))))" << std::endl;
+    game->game_over = 1;
+}
+
 // Spawn new fruit on an empty sq
 // TODO: If every square is full of snake you win? 
-// TODO: Also maybe should just increment after first randomization. This algorithm is silly
 void SnakeGame::new_fruit() {
+    if (game->empty_squares == 0) {
+        game_win();
+        return;
+    }
+
     int size = game->size;
     int size_sq = size * size;
     char** grid = game->grid;
@@ -165,14 +179,27 @@ void SnakeGame::new_fruit() {
     int col = i % size;
 
     while (grid[row][col] != ' ') {
-        i = std::rand() % size_sq;
+        i = (i + 1) % size_sq;
         row = i / size;
         col = i % size;
     }
 
-    grid[row][col] = FRUIT;
+    fill_square(row, col, FRUIT);
 }
 
+void SnakeGame::empty_square(int row, int col) {
+    game->grid[row][col] = ' ';
+    game->empty_squares++;
+}
+
+void SnakeGame::fill_square(int row, int col, char c) {
+    game->grid[row][col] = c;
+    game->empty_squares--;
+}
+
+void SnakeGame::change_square(int row, int col, char c) {
+    game->grid[row][col] = c;
+}
 
 /******************** DRAWING ********************/
 void print_dashed_line(int size) {
