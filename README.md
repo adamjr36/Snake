@@ -4,7 +4,7 @@ Command line simple snake.
 
 ## Usage
 1. make
-2. ./snake [size | -h | --help]
+2. ./snake [size | -h | --help]\
     size: the size of the game board
 
 ## Next
