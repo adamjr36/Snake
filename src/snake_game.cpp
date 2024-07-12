@@ -26,14 +26,30 @@ const std::string FRUIT_COLOR = "red";
 
 //Game State Struct
 struct SnakeGamepImpl {
-    char **grid;
+    char *grid;
     Snake snake;
 
     int size;
     short int empty_squares;
     char game_over;
+
+    SnakeGamepImpl(int size) 
+        : grid(new char[size * size]), size(size), empty_squares(size * size), game_over(0) {
+            for (int i = 0; i < size * size; i++) {
+                grid[i] = ' ';
+            }
+    }
+    ~SnakeGamepImpl() {
+        delete[] grid;
+    }
+
+    char *grid_at(int x, int y) { // No bounds checking
+        return &(grid[x * size + y]);
+    }
+
 };
 ////
+
 
 /******************** CONSTRUCTORS AND SUCH ********************/
 SnakeGame::SnakeGame() {
@@ -44,25 +60,10 @@ SnakeGame::SnakeGame(int size) {
     init_game(size);
 }
 
-// Constructor. mallocs: SnakeGameImpl, size x size grid, Snake
+// Constructor. mallocs: SnakeGameImpl
 void SnakeGame::init_game(int size) {
     assert(size >= 10);
-    game = new SnakeGamepImpl;
-    game->size = size;
-    game->game_over = 0;
-
-    // GRID
-    char** grid = (char **)malloc(size * sizeof(char *));
-    game->grid = grid;
-    // Initialize grid to empty spaces
-    for (int i = 0; i < size; i++) {
-        grid[i] = (char *)malloc(size * sizeof(char *));        
-        for (int j = 0; j < size; j++) {
-            grid[i][j] = ' ';
-        }
-    }
-
-    game->empty_squares = size * size;
+    game = new SnakeGamepImpl(size);
 
     // NEW SNAKE
     int snake_row = std::rand() % size;
@@ -75,11 +76,7 @@ void SnakeGame::init_game(int size) {
 }
 
 SnakeGame::~SnakeGame() {
-    for (int i = 0; i < game->size; i++) {
-        free(game->grid[i]);
-    }
-    free(game->grid);
-    free(game);
+    delete game;
 }
 
 
@@ -135,7 +132,7 @@ void SnakeGame::move() {
     }
     // Set old head to tail, then check if we ran into the tail
     change_square(old_head.first, old_head.second, TAIL);
-    char next_head = game->grid[row][col];
+    char next_head = *(game->grid_at(row, col));
     if (next_head == TAIL) {
         game_over();
     } 
@@ -172,13 +169,13 @@ void SnakeGame::new_fruit() {
 
     int size = game->size;
     int size_sq = size * size;
-    char** grid = game->grid;
+
 
     int i = std::rand() % size_sq;
     int row = i / size;
     int col = i % size;
 
-    while (grid[row][col] != ' ') {
+    while (*(game->grid_at(row, col)) != ' ') {
         i = (i + 1) % size_sq;
         row = i / size;
         col = i % size;
@@ -188,17 +185,17 @@ void SnakeGame::new_fruit() {
 }
 
 void SnakeGame::empty_square(int row, int col) {
-    game->grid[row][col] = ' ';
+    *(game->grid_at(row, col)) = ' ';
     game->empty_squares++;
 }
 
 void SnakeGame::fill_square(int row, int col, char c) {
-    game->grid[row][col] = c;
+    *(game->grid_at(row, col)) = c;
     game->empty_squares--;
 }
 
 void SnakeGame::change_square(int row, int col, char c) {
-    game->grid[row][col] = c;
+    *(game->grid_at(row, col)) = c;
 }
 
 /******************** DRAWING ********************/
@@ -213,7 +210,6 @@ void print_dashed_line(int size) {
 // TODO: OpenGL. This is not pretty.
 void SnakeGame::draw() {
     int size = game->size;
-    char ** grid = game-> grid;
 
     print_dashed_line(size * 2 + 1);
 
@@ -221,7 +217,7 @@ void SnakeGame::draw() {
         for (int j = 0; j < size; j++) {
             std::cout << '|';
 
-            char c = grid[i][j];
+            char c = *(game->grid_at(i, j));
             if (c == HEAD || c == TAIL) {
                 screen_fg(SNAKE_COLOR);
                 std::cout << c;

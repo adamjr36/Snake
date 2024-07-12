@@ -9,8 +9,6 @@ Date: 07/09/2024
 #include <queue>
 #include <utility>
 
-#include <iostream>
-
 typedef std::pair<int, int> PairInt;
 
 /* Snake faces towards the back of q - the tail is at q.front() and the head is pushed back. */
@@ -18,25 +16,24 @@ struct SnakepImpl {
     std::queue<PairInt> q;
     Direction d;
     PairInt head;
+
+    SnakepImpl() : q(), d(Direction::NONE) {}
 };
 
 /******************** CONSTRUCTORS AND SUCH ********************/
 Snake::Snake() {
-    snake = (SnakepImpl *)malloc(sizeof(SnakepImpl));
-
-    snake->d = Direction::NONE;
+    snake = new SnakepImpl;
 }
 
 Snake::Snake(int i, int j) {
-    snake = (SnakepImpl *)malloc(sizeof(SnakepImpl));
+    snake = new SnakepImpl;
 
     snake->head = PairInt(i, j);
     snake->q.push(snake->head);
-    snake->d = Direction::NONE;
 }
 
 Snake::Snake(const Snake &s) {
-    snake = (SnakepImpl *)malloc(sizeof(SnakepImpl));
+    snake = new SnakepImpl;
 
     snake->head = s.snake->head;
     snake->q = s.snake->q;
@@ -58,6 +55,7 @@ Snake &Snake::operator=(const Snake &s) {
 }
 Snake &Snake::operator=(Snake &&s) {
     if (this != &s) {
+        delete snake;
         snake = s.snake;
         s.snake = nullptr;
     }
@@ -67,7 +65,7 @@ Snake &Snake::operator=(Snake &&s) {
 
 Snake::~Snake() {
     if (snake != nullptr) {
-        free(snake);
+        delete snake;
     }
 }
 
