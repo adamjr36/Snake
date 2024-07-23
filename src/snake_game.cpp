@@ -6,6 +6,8 @@ Date: 07/09/2024
 
 #include <iostream>
 #include <unistd.h>
+#include <thread>
+#include <termios.h>
 
 #include "snake_game.h"
 #include "snake.h"
@@ -28,19 +30,24 @@ const std::string FRUIT_COLOR = "red";
 struct SnakeGamepImpl {
     char *grid;
     Snake snake;
+    std::thread input_thread;
 
     int size;
     short int empty_squares;
+    char game_started;
     char game_over;
 
-    SnakeGamepImpl(int size) 
-        : grid(new char[size * size]), size(size), empty_squares(size * size), game_over(0) {
+    SnakeGamepImpl(int size, int snake_row, int snake_col) 
+        : grid(new char[size * size]), 
+        snake(Snake(snake_row, snake_col)),
+        size(size), empty_squares(size * size), game_started(0), game_over(0) {
             for (int i = 0; i < size * size; i++) {
                 grid[i] = ' ';
             }
     }
     ~SnakeGamepImpl() {
         delete[] grid;
+        input_thread.join();
     }
 
     char *grid_at(int x, int y) { // No bounds checking
@@ -63,15 +70,15 @@ SnakeGame::SnakeGame(int size) {
 // Constructor. mallocs: SnakeGameImpl
 void SnakeGame::init_game(int size) {
     assert(size >= 10);
-    game = new SnakeGamepImpl(size);
 
-    // NEW SNAKE
+    // Snake position
     int snake_row = std::rand() % size;
     int snake_col = std::rand() % size;
-    fill_square(snake_row, snake_col, HEAD);
-    game->snake = Snake(snake_row, snake_col);
 
-    // NEW FRUIT
+    game = new SnakeGamepImpl(size, snake_row, snake_col);
+    fill_square(snake_row, snake_col, HEAD);
+
+    // First fruit position
     new_fruit();
 }
 
@@ -85,7 +92,11 @@ void SnakeGame::run() {
     // Wait for the first key press
     screen_clear();
     draw();
-    while (!process_input()) {}
+    // while (!process_input()) {}
+    process_input();
+    while (!(game->game_started)) {
+        usleep(100000);
+    }
 
     // Main game loop
     while (!(game->game_over)) {
@@ -102,19 +113,51 @@ void SnakeGame::run() {
 
 // Process input and return if it was a valid move
 // TODO: Process inputs in a separate thread
-bool SnakeGame::process_input() {
-    int d = (int)getacharnow(1); //Need to get last char from stdin buffer here
+void SnakeGame::process_input() {
+    game->input_thread = std::thread(&SnakeGame::input_loop, this);
+}
 
-    char v = d == Direction::LEFT || d == Direction::RIGHT || d == Direction::UP || d == Direction::DOWN;
-    if (v) {
-        game->snake.set_direction((Direction)d);
+void SnakeGame::input_loop() {
+    // Term stuff
+    struct termios  info, orig;
+    tcgetattr(0, &info);
+    orig = info;
+    info.c_lflag    &= ~ECHO;
+    info.c_lflag    &= ~ICANON;
+    info.c_cc[VMIN]  = 0;
+    info.c_cc[VTIME] = 1; // deciseconds
+    tcsetattr(0, TCSANOW, &info);
+    //
+
+    int c, r;
+    while (!(game->game_over)) {
+        read(0, &r, 4);
+        c = r & 255;
+        // std::cerr << r << std::endl;
+        if (r == 0) {
+            continue;
+        } 
+        if (c == 'q' || r == EOF) {
+            game->game_over = 1;
+            break;
+        } 
+
+        if (c == Direction::LEFT   || 
+            c == Direction::RIGHT  || 
+            c == Direction::UP     || 
+            c == Direction::DOWN) {
+            game->game_started = 1;
+            game->snake.set_direction((Direction)c);
+        }
     }
-    return v;
+
+    // Restore term stuff
+    tcsetattr(0, TCSANOW, &orig);
 }
 
 
 void SnakeGame::move() {
-    process_input();
+    // process_input();
 
     // Get old head (to turn it into part of the tail later) and move the snake
     std::pair<int, int> old_head = game->snake.head();
@@ -127,6 +170,7 @@ void SnakeGame::move() {
     // Check we didn't die
     // Running into the edge
     if (row < 0 || col < 0 || row >= game->size || col >= game->size) {
+        std::cerr << "Ran into the edge" << std::endl;
         game_over();
         return;
     }
@@ -134,6 +178,7 @@ void SnakeGame::move() {
     change_square(old_head.first, old_head.second, TAIL);
     char next_head = *(game->grid_at(row, col));
     if (next_head == TAIL) {
+        std::cerr << "Ran into the tail" << std::endl;
         game_over();
     } 
     

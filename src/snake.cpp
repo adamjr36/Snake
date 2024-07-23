@@ -9,14 +9,17 @@ Date: 07/09/2024
 #include <queue>
 #include <utility>
 
+#include <iostream>
+
 typedef std::pair<int, int> PairInt;
 
 /* Snake faces towards the back of q - the tail is at q.front() and the head is pushed back. */
 struct SnakepImpl {
     std::queue<PairInt> q;
-    Direction d;
     PairInt head;
-
+    Direction d;
+    Direction prev_d; // Last direction the snake moved in
+    
     SnakepImpl() : q(), d(Direction::NONE) {}
 };
 
@@ -107,6 +110,7 @@ void Snake::move() {
 
     snake->head = std::make_pair(i, j);
     snake->q.push(snake->head);
+    snake->prev_d = snake->d;
 }
 
 PairInt Snake::remove_tail() {
@@ -139,7 +143,7 @@ void Snake::set_direction(Direction d) {
             break;
     }
 
-    if (snake->d != opp) {
+    if (snake->prev_d != opp) {
         snake->d = d;
     }
 }

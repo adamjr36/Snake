@@ -24,7 +24,8 @@ class SnakeGame {
         void game_over();
         void game_win();
         
-        bool process_input();
+        void process_input();
+        void input_loop();
         void new_fruit();
 
         void empty_square(int x, int y);
