@@ -5,6 +5,8 @@ Date: 07/09/2024
 */
 #include <iostream>
 #include "snake_game.h"
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
 #define SIZE 12
 
@@ -34,8 +36,25 @@ int main(int argc, char *argv[])
         }
     }
 
-    SnakeGame game(size);
-    game.run();
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Snake Game");
+    sf::CircleShape shape(100.f);
+    shape.setFillColor(sf::Color::Green);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+        }
+
+        window.clear();
+        window.draw(shape);
+        window.display();
+    }
+
+    // SnakeGame game(size);
+    // game.run();
 
     return 0;
 }
